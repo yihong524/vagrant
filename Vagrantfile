@@ -1,23 +1,35 @@
-# vagrant config file
+# -*- mode: ruby -*-
+# vi: set ft=ruby :
+hosts = {
+  "n1" => "192.168.77.10",
+  "n2" => "192.168.77.11",
+  "n3" => "192.168.77.12",
+  "n4" => "192.168.77.13"
+}
 Vagrant.configure("2") do |config|
-    config.vm.define "master1" do |master1|
-        master1.vm.provider "virtualbox" do |v|
-            v.customize ["modifyvm", :id, "--name", "master1", "--memory", "512"]
-        end
-        # disable auto update
-        config.vm.box_check_update = false
-        master1.vm.box = "ubuntu/xenial64"
-        master1.vm.hostname = "master1"
-        master1.vm.network "private_network", ip:"192.168.11.1"
+  # always use Vagrants insecure key
+  config.ssh.insert_key = false
+  # forward ssh agent to easily ssh into the different machines
+  config.ssh.forward_agent = true
+
+  # check_guest_additions = false
+  # functional_vboxsf     = false
+
+  config.vm.box = "bento/ubuntu-16.04"
+  # config.vm.box = "ubuntu/xenial64"
+
+  config.vm.provision :ansible do |ansible|
+    # ansible.host_key_checking = false
+    # etc.
+    ansible.playbook = "playbook.yml"
+  end
+
+  hosts.each do |name, ip|
+    config.vm.define name do |machine|
+      machine.vm.network :private_network, ip: ip
+      machine.vm.provider "virtualbox" do |v|
+        v.name = name
+      end
     end
-        config.vm.define "master2" do |master2|
-        master2.vm.provider "virtualbox" do |v|
-            v.customize ["modifyvm", :id, "--name", "master2", "--memory", "512"]
-        end
-        # disable auto update
-        config.vm.box_check_update = false
-        master2.vm.box = "ubuntu/xenial64"
-        master2.vm.hostname = "master2"
-        master2.vm.network "private_network", ip:"192.168.11.2"
-    end
+  end
 end
